@@ -12,7 +12,7 @@ import sgdk.rescomp.type.TSX;
 import sgdk.tool.FileUtil;
 import sgdk.tool.StringUtil;
 
-public class DUMMY_TILESETProcessor implements Processor
+public class DummyTilesetProcessor implements Processor
 {
     @Override
     public String getId()
@@ -25,8 +25,8 @@ public class DUMMY_TILESETProcessor implements Processor
     {
         if (fields.length < 3)
         {
-            System.out.println("Wrong DUMMY TILESET definition");
-            System.out.println("DUMMY_TILESET name \"file\" [compression [opt [ordering [export[exclude]]]]]");
+            System.out.println("Wrong DUMMY_TILESET definition");
+            System.out.println("TILESET name \"file\" [compression [opt [ordering [export]]]]");
             System.out.println("  name          Tileset variable name");
             System.out.println("  file          path of the input file (BMP, PNG image file or TSX Tiled file)");
             System.out.println("  compression   compression type, accepted values:");
@@ -44,9 +44,6 @@ public class DUMMY_TILESETProcessor implements Processor
             System.out.println("  export        enable the tileset PNG export, accept values:");
             System.out.println("                    0 / FALSE       = no PNG export (default)");
             System.out.println("                    1 / TRUE        = optimized tileset is export to PNG format '<file>-tileset-export.png'");
-            System.out.println("  exclude       do not include this set in the ROM (used for special TileMaps/Maps builds), accept values:");
-            System.out.println("                    0 / FALSE       = tileSet is included (default)");
-            System.out.println("                    1 / TRUE        = tileSet is not included");
 
             return null;
         }
@@ -72,20 +69,14 @@ public class DUMMY_TILESETProcessor implements Processor
         TileOrdering order = TileOrdering.ROW;
         if (fields.length >= 6)
             order = Util.getTileOrdering(fields[5]);
-
         // PNG export
         boolean export = false;
         if (fields.length >= 7)
             export = StringUtil.parseBoolean(fields[6], false);
 
-          // PNG export
-        boolean exclude = false;
-        if (fields.length >= 8)
-            exclude = StringUtil.parseBoolean(fields[7], false);
-
         // add resource file (used for deps generation)
         Compiler.addResourceFile(fileIn);
 
-        return Tileset.getTileset(id, tsx ? TSX.getTSXTilesetPath(fileIn) : fileIn, compression, opt, tsx, exclude, order, export);
+        return Tileset.getTileset(id, tsx ? TSX.getTSXTilesetPath(fileIn) : fileIn, compression, opt, tsx, false, order, export);
     }
 }
