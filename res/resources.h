@@ -1,8 +1,7 @@
 #include <genesis.h>
+#ifndef _._RESOURCES_H_
+#define _._RESOURCES_H_
 
-#ifndef _RES_RESOURCES_H_
-#define _RES_RESOURCES_H_
+extern const TileSet stage3tiles;
 
-extern const CSV collision;
-
-#endif // _RES_RESOURCES_H_
+#endif // _._RESOURCES_H_
