@@ -1,4 +1,4 @@
-# sprites_def example with manually typed cutting average
+# sprites_def example with manually typed cutting regions
 
 ```
 # Animation 0 - first xeno
@@ -14,10 +14,10 @@ FRAME 1
 # Animation 1 - missing! BUT it will be processed automatically with DEFAULT SGDK SETTINGS
 ```
 
-#end of sprites_def
+# end of sprites_def
 
 
-RESCOMP EXTENSION USAGE:
+# RESCOMP EXTENSION USAGE:
 copy rescomp_ext.jar in your \res root folder
 
 
