@@ -9,12 +9,12 @@ import sgdk.rescomp.type.Basics.Compression;
 import sgdk.tool.FileUtil;
 import sgdk.tool.StringUtil;
 
-public class SpriteFileProcessor implements Processor
+public class SpriteCutProcessor implements Processor
 {
     @Override
     public String getId()
     {
-        return "SPRITE_FILE";
+        return "SPRITE_CUT";
     }
 
     @Override
@@ -94,7 +94,7 @@ public class SpriteFileProcessor implements Processor
         Compiler.addResourceFile(fileIn);
         Compiler.addResourceFile(spritesDefFile);
 
-        return new SpriteFile(id, fileIn, spritesDefFile, wf, hf, compression, time, collision, optDuplicate);
+        return new SpriteCut(id, fileIn, spritesDefFile, wf, hf, compression, time, collision, optDuplicate);
 
     }
 }

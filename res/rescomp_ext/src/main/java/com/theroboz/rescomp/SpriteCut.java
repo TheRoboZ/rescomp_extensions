@@ -16,18 +16,18 @@ import sgdk.tool.ArrayMath;
 import sgdk.tool.ImageUtil;
 import sgdk.tool.ImageUtil.BasicImageInfo;
 
-public class SpriteFile extends Resource
+public class SpriteCut extends Resource
 {
     public final int wf; // width of frame cell in tile
     public final int hf; // height of frame cell in tile
-    public final List<SpriteFileAnimation> animations;
+    public final List<SpriteCutAnimation> animations;
     public int maxNumTile;
     public int maxNumSprite;
 
     final int hc;
 
     public final Palette palette;
-    public SpriteFile(String id, String imgFile, String spritesDefFile, int wf, int hf, Compression compression, int[][] time, CollisionType collision, boolean optDuplicate) throws Exception
+    public SpriteCut(String id, String imgFile, String spritesDefFile, int wf, int hf, Compression compression, int[][] time, CollisionType collision, boolean optDuplicate) throws Exception
     {
         super(id);
 
@@ -87,20 +87,20 @@ public class SpriteFile extends Resource
         palette = (Palette) addInternalResource(new Palette(id + "_palette", imgFile, palIndex * 16, 16, true));
 
         // Read sprite definitions from file
-        final SpriteFileReader spriteDefReader = new SpriteFileReader(spritesDefFile);
+        final SpriteCutReader spriteDefReader = new SpriteCutReader(spritesDefFile);
         final int numAnim = ht / hf;
 
 
         for (int i = 0; i < numAnim; i++)
         {
             // build sprite animation
-            SpriteFileAnimation animation = new SpriteFileAnimation(id + "_animation" + i, image, wt, ht, i, wf, hf, time[Math.min(time.length - 1, i)], collision, compression, spriteDefReader.getAnimationFrameDefinitions(i), optDuplicate);
+            SpriteCutAnimation animation = new SpriteCutAnimation(id + "_animation" + i, image, wt, ht, i, wf, hf, time[Math.min(time.length - 1, i)], collision, compression, spriteDefReader.getAnimationFrameDefinitions(i), optDuplicate);
 
             // check if empty
             if (!animation.isEmpty())
             {
                 // add as internal resource (get duplicate if exist)
-                animation = (SpriteFileAnimation) addInternalResource(animation);
+                animation = (SpriteCutAnimation) addInternalResource(animation);
 
                 // update maximum number of tile and sprite
                 maxNumTile = Math.max(maxNumTile, animation.getMaxNumTile());
@@ -127,9 +127,9 @@ public class SpriteFile extends Resource
     @Override
     public boolean internalEquals(Object obj)
     {
-        if (obj instanceof SpriteFile)
+        if (obj instanceof SpriteCut)
         {
-            final SpriteFile sprite = (SpriteFile) obj;
+            final SpriteCut sprite = (SpriteCut) obj;
             return (wf == sprite.wf) && (hf == sprite.hf) && (maxNumTile == sprite.maxNumTile) && (maxNumSprite == sprite.maxNumSprite)
                     && animations.equals(sprite.animations) && palette.equals(sprite.palette);
         }
@@ -160,7 +160,7 @@ public class SpriteFile extends Resource
     {
         int result = 0;
 
-        for (SpriteFileAnimation animation : animations)
+        for (SpriteCutAnimation animation : animations)
             result += animation.totalSize();
 
         return result + palette.totalSize() + shallowSize();
@@ -174,7 +174,7 @@ public class SpriteFile extends Resource
 
         // animations pointer table
         Util.decl(outS, outH, null, id + "_animations", 2, false);
-        for (SpriteFileAnimation animation : animations)
+        for (SpriteCutAnimation animation : animations)
             outS.append("    dc.l    " + animation.id + "\n");
 
         outS.append("\n");

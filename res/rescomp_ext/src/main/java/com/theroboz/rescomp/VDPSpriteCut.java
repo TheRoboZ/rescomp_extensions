@@ -10,7 +10,7 @@ import sgdk.rescomp.resource.Bin;
 import sgdk.rescomp.tool.Util;
 import sgdk.rescomp.type.SpriteCell;
 
-public class VDPSpriteFile extends Resource
+public class VDPSpriteCut extends Resource
 {
     public final int offsetX;
     public final int offsetY;
@@ -21,7 +21,7 @@ public class VDPSpriteFile extends Resource
 
     final int hc;
 
-    public VDPSpriteFile(String id, int offX, int offY, int w, int h, int wf, int hf)
+    public VDPSpriteCut(String id, int offX, int offY, int w, int h, int wf, int hf)
     {
         super(id);
 
@@ -44,7 +44,7 @@ public class VDPSpriteFile extends Resource
         hc = (offsetX << 0) ^ (offsetXFlip << 0) ^ (offsetY << 8) ^ (offsetYFlip << 8) ^ (wt << 16) ^ (ht << 24);
     }
 
-    public VDPSpriteFile(String id, SpriteCell sprite, int wf, int hf)
+    public VDPSpriteCut(String id, SpriteCell sprite, int wf, int hf)
     {
         this(id, sprite.x, sprite.y, sprite.width / 8, sprite.height / 8, wf, hf);
     }
@@ -71,9 +71,9 @@ public class VDPSpriteFile extends Resource
     @Override
     public boolean internalEquals(Object obj)
     {
-        if (obj instanceof VDPSpriteFile)
+        if (obj instanceof VDPSpriteCut)
         {
-            final VDPSpriteFile vdpSprite = (VDPSpriteFile) obj;
+            final VDPSpriteCut vdpSprite = (VDPSpriteCut) obj;
             return (offsetX == vdpSprite.offsetX) && (offsetY == vdpSprite.offsetY) && (wt == vdpSprite.wt) && (ht == vdpSprite.ht)
                     && (offsetXFlip == vdpSprite.offsetXFlip) && (offsetYFlip == vdpSprite.offsetYFlip);
         }

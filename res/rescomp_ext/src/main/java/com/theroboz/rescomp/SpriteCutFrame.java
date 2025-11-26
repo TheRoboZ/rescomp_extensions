@@ -22,8 +22,8 @@ import sgdk.rescomp.type.SpriteCell.OptimizationLevel;
 import sgdk.rescomp.type.SpriteCell.OptimizationType;
 import sgdk.tool.ImageUtil;
 
-public class SpriteFileFrame extends Resource {
-   public final List<VDPSpriteFile> vdpSprites;
+public class SpriteCutFrame extends Resource {
+   public final List<VDPSpriteCut> vdpSprites;
    public final Collision collision;
    public final Tileset tileset;
    public final int timer;
@@ -34,7 +34,7 @@ public class SpriteFileFrame extends Resource {
    final Basics.Compression compression;
    final int fhc;
 
-   public SpriteFileFrame(String id, byte[] frameImage8bpp, int wf, int hf, int timer, Basics.CollisionType collisionType, Basics.Compression compression, List<SpriteCell> sprites) {
+   public SpriteCutFrame(String id, byte[] frameImage8bpp, int wf, int hf, int timer, Basics.CollisionType collisionType, Basics.Compression compression, List<SpriteCell> sprites) {
       super(id);
       this.vdpSprites = new ArrayList();
       this.timer = timer;
@@ -44,7 +44,7 @@ public class SpriteFileFrame extends Resource {
       this.frameDim = new Dimension(wf * 8, hf * 8);
       this.fhc = computeFastHashcode(frameImage8bpp, this.frameDim, timer, collisionType, compression);
       if (sprites.isEmpty()) {
-         System.out.println("Sprite frame '" + id + "' is empty");
+         System.out.println("SpriteCut '" + id + "' is empty");
          this.tileset = (Tileset)addInternalResource(new Tileset(id + "_tileset", false));
       } else {
          int optNumTile = 0;
@@ -85,18 +85,23 @@ public class SpriteFileFrame extends Resource {
 
       while(var12.hasNext()) {
          SpriteCell sprite = (SpriteCell)var12.next();
-         this.vdpSprites.add(new VDPSpriteFile(id + "_sprite" + ind++, sprite, wf, hf));
+         this.vdpSprites.add(new VDPSpriteCut(id + "_sprite" + ind++, sprite, wf, hf));
       }
 
       this.hc = timer << 16 ^ (this.tileset != null ? this.tileset.hashCode() : 0) ^ this.vdpSprites.hashCode() ^ (this.collision != null ? this.collision.hashCode() : 0);
    }
 
-   public SpriteFileFrame(String id, byte[] frameImage8bpp, int wf, int hf, int timer, Basics.CollisionType collisionType, Basics.Compression compression, SpriteCell.OptimizationType optType, SpriteCell.OptimizationLevel optLevel) {
+   public SpriteCutFrame(String id, byte[] frameImage8bpp, int wf, int hf, int timer, Basics.CollisionType collisionType, Basics.Compression compression, SpriteCell.OptimizationType optType, SpriteCell.OptimizationLevel optLevel) {
       this(id, frameImage8bpp, wf, hf, timer, collisionType, compression, computeSpriteCutting(id, frameImage8bpp, wf, hf, optType, optLevel));
    }
 
-   public SpriteFileFrame(String id, byte[] image8bpp, int w, int h, int frameIndex, int animIndex, int wf, int hf, int timer, Basics.CollisionType collisionType, Basics.Compression compression, SpriteCell.OptimizationType optType, SpriteCell.OptimizationLevel optLevel) {
+   public SpriteCutFrame(String id, byte[] image8bpp, int w, int h, int frameIndex, int animIndex, int wf, int hf, int timer, Basics.CollisionType collisionType, Basics.Compression compression, SpriteCell.OptimizationType optType, SpriteCell.OptimizationLevel optLevel) {
       this(id, ImageUtil.getSubImage(image8bpp, new Dimension(w * 8, h * 8), new Rectangle(frameIndex * wf * 8, animIndex * hf * 8, wf * 8, hf * 8)), wf, hf, timer, collisionType, compression, optType, optLevel);
+   }
+
+   public SpriteCutFrame(String id, byte[] image8bpp, int w, int h, int timer, Basics.CollisionType collision, Basics.Compression compression)
+   {
+      this(id, image8bpp, w, h, timer, collision, compression, computeSpriteCutting(id, image8bpp, w, h, OptimizationType.NONE, OptimizationLevel.MEDIUM));
    }
 
    static List<SpriteCell> computeSpriteCutting(String id, byte[] frameImage8bpp, int wf, int hf, SpriteCell.OptimizationType optType, SpriteCell.OptimizationLevel optLevel) throws UnsupportedOperationException {
@@ -161,7 +166,7 @@ public class SpriteFileFrame extends Resource {
       Iterator var3 = this.vdpSprites.iterator();
 
       while(var3.hasNext()) {
-         VDPSpriteFile sprite = (VDPSpriteFile)var3.next();
+         VDPSpriteCut sprite = (VDPSpriteCut)var3.next();
          result.add(new SpriteCell(sprite.offsetX, sprite.offsetY, sprite.wt * 8, sprite.ht * 8, OptimizationType.BALANCED));
       }
 
@@ -178,7 +183,7 @@ public class SpriteFileFrame extends Resource {
 
    public boolean isOptimisable() {
       if (this.vdpSprites.size() == 1) {
-         VDPSpriteFile vdpSprite = (VDPSpriteFile)this.vdpSprites.get(0);
+         VDPSpriteCut vdpSprite = (VDPSpriteCut)this.vdpSprites.get(0);
          return vdpSprite.wt * 8 == this.frameDim.width && vdpSprite.ht * 8 == this.frameDim.height && vdpSprite.offsetX == 0 && vdpSprite.offsetY == 0;
       } else {
          return false;
@@ -194,10 +199,10 @@ public class SpriteFileFrame extends Resource {
    }
 
    public boolean internalEquals(Object obj) {
-      if (!(obj instanceof SpriteFileFrame)) {
+      if (!(obj instanceof SpriteCutFrame)) {
          return false;
       } else {
-         SpriteFileFrame spriteFrame = (SpriteFileFrame)obj;
+         SpriteCutFrame spriteFrame = (SpriteCutFrame)obj;
          return this.timer == spriteFrame.timer && this.tileset.equals(spriteFrame.tileset) && this.vdpSprites.equals(spriteFrame.vdpSprites) && (this.collision == spriteFrame.collision || this.collision != null && this.collision.equals(spriteFrame.collision));
       }
    }
@@ -233,7 +238,7 @@ public class SpriteFileFrame extends Resource {
       Iterator var6 = this.vdpSprites.iterator();
 
       while(var6.hasNext()) {
-         VDPSpriteFile sprite = (VDPSpriteFile)var6.next();
+         VDPSpriteCut sprite = (VDPSpriteCut)var6.next();
          sprite.internalOutS(outS);
       }
 

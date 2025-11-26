@@ -20,10 +20,10 @@ import sgdk.rescomp.type.Basics.Compression;
 import sgdk.rescomp.type.SpriteCell;
 import sgdk.tool.ImageUtil;
 
-public class SpriteFileAnimation extends Resource
+public class SpriteCutAnimation extends Resource
 {
-    public final List<SpriteFileFrame> frames;
-    public final Set<SpriteFileFrame> frameSet;
+    public final List<SpriteCutFrame> frames;
+    public final Set<SpriteCutFrame> frameSet;
     public int loopIndex;
 
     final int hc;
@@ -40,7 +40,7 @@ public class SpriteFileAnimation extends Resource
      * @param frameDefinitions
      *        List of SpriteFrameDefinition from file
      */
-    public SpriteFileAnimation(String id, byte[] image8bpp, int w, int h, int animIndex, int wf, int hf, int[] time, CollisionType collision, Compression compression, List<SpriteFrameDefinition> frameDefinitions, boolean optDuplicate)
+    public SpriteCutAnimation(String id, byte[] image8bpp, int w, int h, int animIndex, int wf, int hf, int[] time, CollisionType collision, Compression compression, List<SpriteFrameDefinition> frameDefinitions, boolean optDuplicate)
     {
         super(id);
 
@@ -97,33 +97,44 @@ public class SpriteFileAnimation extends Resource
             }
 
             // try to search for a duplicated sprite mask to we can re-use the previous sprite cutting without processing a new one
-            SpriteFileFrame frame = findMatchingSpriteFrameMask(frameImage, frameBounds.getSize());
+            SpriteCutFrame frame = findMatchingSpriteFrameMask(frameImage, frameBounds.getSize());
             // found it ?
             if (frame != null)
             {
             	// create sprite frame ('timer' is augmented by number of duplicate) and re-use previous sprite cutting
-            	frame = new SpriteFileFrame(id + "_frame" + i, frameImage, wf, hf, time[Math.min(time.length - 1, i)] * (duplicate + 1), collision, compression, frame.getSprites());
+            	frame = new SpriteCutFrame(id + "_frame" + i, frameImage, wf, hf, time[Math.min(time.length - 1, i)] * (duplicate + 1), collision, compression, frame.getSprites());
             }
             else
             {
-                // Get sprite definitions for this frame from file
-            List<SpriteCell> sprites = new ArrayList<>();
+                    // Get sprite definitions for this frame from file
+                List<SpriteCell> sprites = new ArrayList<>();
 
-            if (i < frameDefinitions.size() && frameDefinitions.get(i) != null)
-            {
-                final SpriteFrameDefinition frameDef = frameDefinitions.get(i);
-                sprites = new ArrayList<>(frameDef.cells);
+                if (i < frameDefinitions.size())
+                {
+                    if (frameDefinitions.get(i) != null)
+                    {
+                        final SpriteFrameDefinition frameDef = frameDefinitions.get(i);
+                        sprites = new ArrayList<>(frameDef.cells);
+                    }
+                }
+
+                // Validate sprite count
+                if (sprites.size() > 16)
+                    throw new IllegalArgumentException("Sprite animation '" + id + "' frame " + i + " uses " + sprites.size()
+                            + " sprites, max is 16");
+                else if (sprites.size() > 0)
+                    // Create sprite frame using file-defined sprites
+                    frame = new SpriteCutFrame(id + "_frame" + i, frameImage, wf, hf, time[Math.min(time.length - 1, i)] * (duplicate + 1), collision, compression, sprites);
+                else
+                {
+                    //@TODO: process frame normally
+                    // create sprite frame ('timer' is augmented by number of duplicate)
+            	    frame = new SpriteCutFrame(id + "_frame" + i, frameImage, wf, hf, time[Math.min(time.length - 1, i)] * (duplicate + 1), collision, compression);
+                }
             }
 
-            // Validate sprite count
-            if (sprites.size() > 16)
-                throw new IllegalArgumentException("Sprite animation '" + id + "' frame " + i + " uses " + sprites.size()
-                        + " sprites, max is 16");
-            // Create sprite frame using file-defined sprites
-            frame = new SpriteFileFrame(id + "_frame" + i, frameImage, wf, hf, time[Math.min(time.length - 1, i)] * (duplicate + 1), collision, compression, sprites);
-            }
             // add as internal resource (get duplicate if exist)
-            frame = (SpriteFileFrame) addInternalResource(frame);
+            frame = (SpriteCutFrame) addInternalResource(frame);
             // bypass duplicates
             i += duplicate;
 
@@ -139,11 +150,11 @@ public class SpriteFileAnimation extends Resource
         hc = loopIndex ^ frames.hashCode();
     }
 
-    private SpriteFileFrame findMatchingSpriteFrameMask(byte[] frameImage, Dimension dimension)
+    private SpriteCutFrame findMatchingSpriteFrameMask(byte[] frameImage, Dimension dimension)
     {
-        for (Resource res : Compiler.getResources(SpriteFileFrame.class))
+        for (Resource res : Compiler.getResources(SpriteCutFrame.class))
         {
-            final SpriteFileFrame spriteFrame = (SpriteFileFrame) res;
+            final SpriteCutFrame spriteFrame = (SpriteCutFrame) res;
 
             if (checkMaskEqual(spriteFrame, frameImage, dimension))
                 return spriteFrame;
@@ -152,7 +163,7 @@ public class SpriteFileAnimation extends Resource
         return null;
     }
 
-    private boolean checkMaskEqual(SpriteFileFrame spriteFrame, byte[] frameImage, Dimension dimension)
+    private boolean checkMaskEqual(SpriteCutFrame spriteFrame, byte[] frameImage, Dimension dimension)
     {
     	if (!spriteFrame.frameDim.equals(dimension))
     		return false;
@@ -187,7 +198,7 @@ public class SpriteFileAnimation extends Resource
     {
         int result = 0;
 
-        for (SpriteFileFrame frame : frames)
+        for (SpriteCutFrame frame : frames)
             result = Math.max(result, frame.getNumTile());
 
         return result;
@@ -197,7 +208,7 @@ public class SpriteFileAnimation extends Resource
     {
         int result = 0;
 
-        for (SpriteFileFrame frame : frames)
+        for (SpriteCutFrame frame : frames)
             result = Math.max(result, frame.getNumSprite());
 
         return result;
@@ -212,9 +223,9 @@ public class SpriteFileAnimation extends Resource
     @Override
     public boolean internalEquals(Object obj)
     {
-        if (obj instanceof SpriteFileAnimation)
+        if (obj instanceof SpriteCutAnimation)
         {
-            final SpriteFileAnimation spriteAnim = (SpriteFileAnimation) obj;
+            final SpriteCutAnimation spriteAnim = (SpriteCutAnimation) obj;
             return (loopIndex == spriteAnim.loopIndex) && frames.equals(spriteAnim.frames);
         }
 
@@ -244,7 +255,7 @@ public class SpriteFileAnimation extends Resource
     {
         int result = 0;
 
-        for (SpriteFileFrame frame : frameSet)
+        for (SpriteCutFrame frame : frameSet)
             result += frame.totalSize();
 
         return result + shallowSize();
@@ -258,7 +269,7 @@ public class SpriteFileAnimation extends Resource
 
         // frames pointer table
         Util.decl(outS, outH, null, id + "_frames", 2, false);
-        for (SpriteFileFrame frame : frames)
+        for (SpriteCutFrame frame : frames)
             outS.append("    dc.l    " + frame.id + "\n");
 
         outS.append("\n");

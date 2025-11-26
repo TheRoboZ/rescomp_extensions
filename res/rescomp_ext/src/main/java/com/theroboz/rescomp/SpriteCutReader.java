@@ -12,7 +12,7 @@ import java.util.Map;
 import sgdk.rescomp.type.SpriteCell;
 import sgdk.rescomp.type.SpriteCell.OptimizationType;
 
-public class SpriteFileReader
+public class SpriteCutReader
 {
     private final File file;
     private final Map<Integer, List<SpriteFrameDefinition>> animationDefinitions;
@@ -38,7 +38,7 @@ public class SpriteFileReader
      * 0 32 32 32
      * 32 32 32 32
      */
-    public SpriteFileReader(String filePath) throws IOException
+    public SpriteCutReader(String filePath) throws IOException
     {
         this.file = new File(filePath);
         this.animationDefinitions = new HashMap<>();
@@ -99,7 +99,7 @@ public class SpriteFileReader
                     else if (currentAnimation >= 0 && currentFrame >= 0)
                     {
                         // Parse rectangle
-                        final SpriteCell cell = parseRectangle(line);
+                        final SpriteCell cell = parseRectangle(line, currentAnimation, currentFrame);
                         if (cell != null)
                             currentCells.add(cell);
                     }
@@ -130,7 +130,7 @@ public class SpriteFileReader
         }
     }
 
-    private SpriteCell parseRectangle(String line)
+    private SpriteCell parseRectangle(String line, int currentAnimation, int currentFrame)
     {
         line = line.replaceAll("[,\\s]+", " ").trim();
         final String[] parts = line.split(" ");
@@ -145,7 +145,14 @@ public class SpriteFileReader
             final int width = Integer.parseInt(parts[2])-x+1;
             final int height = Integer.parseInt(parts[3])-y+1;
 
-            return new SpriteCell(x, y, width, height, OptimizationType.BALANCED);
+            if ((width==8 || width==16 || width==24 || width==32)
+                && (height==8 || height==16 || height==24 || height==32))
+                return new SpriteCell(x, y, width, height, OptimizationType.BALANCED);
+            else
+            {
+                System.out.println("\n ERROR: ANIM "+currentAnimation+" FRAME "+currentFrame+" HEIGHT and WIDTH must be 8, 16, 24 or 32. FAME Processed with default values \n");
+                return null;
+            }
         }
         catch (NumberFormatException e)
         {
