@@ -3,7 +3,6 @@ package com.theroboz.rescomp;
 import sgdk.rescomp.Compiler;
 import sgdk.rescomp.Processor;
 import sgdk.rescomp.Resource;
-import sgdk.rescomp.resource.Tileset;
 import sgdk.rescomp.tool.Util;
 import sgdk.rescomp.type.Basics.Compression;
 import sgdk.rescomp.type.Basics.TileOptimization;
@@ -77,6 +76,6 @@ public class DummyTilesetProcessor implements Processor
         // add resource file (used for deps generation)
         Compiler.addResourceFile(fileIn);
 
-        return Tileset.getTileset(id, tsx ? TSX.getTSXTilesetPath(fileIn) : fileIn, compression, opt, tsx, false, order, export);
+        return DummyTileset.getTileset(id, tsx ? TSX.getTSXTilesetPath(fileIn) : fileIn, compression, opt, tsx, true, order, export);
     }
 }

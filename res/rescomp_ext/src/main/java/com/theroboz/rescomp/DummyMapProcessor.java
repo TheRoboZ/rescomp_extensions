@@ -6,7 +6,6 @@ import sgdk.rescomp.Compiler;
 import sgdk.rescomp.Processor;
 import sgdk.rescomp.Resource;
 import sgdk.rescomp.resource.Map;
-import sgdk.rescomp.resource.Tileset;
 import sgdk.rescomp.tool.Util;
 import sgdk.rescomp.type.Basics.Compression;
 import sgdk.rescomp.type.Basics.TileOrdering;
@@ -98,7 +97,7 @@ public class DummyMapProcessor implements Processor
         // image file
         {
             // get tileset
-            final Tileset tileset = (Tileset) Compiler.getResourceById(fields[3]);
+            final DummyTileset tileset = (DummyTileset) Compiler.getResourceById(fields[3]);
             // check tileset correctly found
             if (tileset == null)
                 throw new InvalidParameterException("MAP resource definition error: Tileset '" + fields[3] + "' not found !");
@@ -113,7 +112,8 @@ public class DummyMapProcessor implements Processor
                 mapBase = StringUtil.parseInt(fields[5], 0);
 
             // build MAP from an image
-            return Map.getMap(id, fileIn, mapBase, 2, Util.asList(tileset), compression, true);
+
+            return DummyMap.getMap(id, fileIn, mapBase, 2, Util.asList(tileset), compression, false);
         }
     }
 }

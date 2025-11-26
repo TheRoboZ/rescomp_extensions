@@ -13,7 +13,6 @@ import java.util.List;
 
 import sgdk.rescomp.Resource;
 import sgdk.rescomp.resource.Bin;
-import sgdk.rescomp.tool.Util;
 import sgdk.rescomp.type.Basics.Compression;
 import sgdk.rescomp.type.Basics.TileEquality;
 import sgdk.rescomp.type.Basics.TileOptimization;
@@ -237,7 +236,7 @@ public class DummyTileset extends Resource
         // build BIN (tiles data) with wanted compression
         final Bin binResource = new Bin(id + "_data", data, compression);
         // internal
-        binResource.global = false;
+        binResource.global = true;
 
         // temporary tileset --> don't store the bin data
         if (temp)
@@ -464,17 +463,17 @@ public class DummyTileset extends Resource
     @Override
     public void out(ByteArrayOutputStream outB, StringBuilder outS, StringBuilder outH) throws IOException
     {
-        // can't store pointer so we just reset binary stream here (used for compression only)
-        outB.reset();
+        // // can't store pointer so we just reset binary stream here (used for compression only)
+        // outB.reset();
 
-        // output TileSet structure
-        Util.decl(outS, outH, "TileSet", id, 2, global);
-        // set compression info (very important that binary data had already been exported at this point)
-        outS.append("    dc.w    " + (bin.doneCompression.ordinal() - 1) + "\n");
-        // set number of tile
-        outS.append("    dc.w    " + getNumTile() + "\n");
-        // set data pointer
-        outS.append("    dc.l    " + bin.id + "\n");
-        outS.append("\n");
+        // // output TileSet structure
+        // Util.decl(outS, outH, "TileSet", id, 2, global);
+        // // set compression info (very important that binary data had already been exported at this point)
+        // outS.append("    dc.w    " + (bin.doneCompression.ordinal() - 1) + "\n");
+        // // set number of tile
+        // outS.append("    dc.w    " + getNumTile() + "\n");
+        // // set data pointer
+        // outS.append("    dc.l    " + bin.id + "\n");
+        // outS.append("\n");
     }
 }

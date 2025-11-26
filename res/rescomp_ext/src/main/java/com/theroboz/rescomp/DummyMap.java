@@ -11,7 +11,6 @@ import sgdk.rescomp.tool.Util;
 import sgdk.rescomp.type.Basics.Compression;
 import sgdk.rescomp.type.Basics.TileEquality;
 import sgdk.rescomp.type.Basics.TileOptimization;
-import sgdk.rescomp.type.Basics.TileOrdering;
 import sgdk.rescomp.type.MapBlock;
 import sgdk.rescomp.type.Metatile;
 import sgdk.rescomp.type.Tile;
