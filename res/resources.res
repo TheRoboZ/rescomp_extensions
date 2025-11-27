@@ -1,1 +1,0 @@
-DUMMY_TILESET stage3tiles "stage3-Sheet.png"
