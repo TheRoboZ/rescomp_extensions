@@ -20,9 +20,11 @@ FRAME 1
 # RESCOMP EXTENSION USAGE:
 copy rescomp_ext.jar in your \res root folder
 
-    SPRITE_CUT xeno_spr  "xeno.png" "sprite_cuts.txt" 8 8 NONE  4 NONE
+in your res file:
 
-    SPRITE_FILE name width height [compression [time [collision [opt_type [opt_level [opt_duplicate [\"file\"]]]]]]]
+    SLICED_SPRITE name width height [compression [time [collision [opt_type [opt_level [opt_duplicate [\"file\"]]]]]]]
+
+        !NOTE: as long as \"file\" is the last parameter, you can omit any of the previous optional ones to use simpler declarations
 
     name          Sprite variable name
 
@@ -53,4 +55,5 @@ copy rescomp_ext.jar in your \res root folder
                     TRUE      = only the first instance of consecutive duplicated frames is kept and 'timer' value is increased to compensate the removed frames time.
                     Note that it *does* change the 'animation.numFrame' information so beware of that when enabling this optimization.
 
-    file          the image file to convert to SpriteDefinition structure (BMP or PNG image)
+    file*          the image file to convert to SpriteDefinition structure (BMP or PNG image)
+                   * as long as this is the last parameter, you can omit any of the previous optional ones

@@ -17,7 +17,7 @@ public class SpriteCutProcessor implements Processor
     @Override
     public String getId()
     {
-        return "SPRITE_CUT";
+        return "SLICED_SPRITE";
     }
 
     @Override
@@ -25,8 +25,8 @@ public class SpriteCutProcessor implements Processor
     {
         if (fields.length < 5)
         {
-            System.out.println("Wrong SPRITE_CUT definition");
-            System.out.println("  SPRITE_CUT name \"file\" width height [compression [time [collision [opt_type [opt_level [opt_duplicate [\"sprites_def\"]]]]]]]");
+            System.out.println("Wrong SLICED_SPRITE definition");
+            System.out.println("  SLICED_SPRITE name \"file\" width height [compression [time [collision [opt_type [opt_level [opt_duplicate [\"sprites_def\"]]]]]]]");
             System.out.println("  name          Sprite variable name");
             System.out.println("  file          the image file to convert to SpriteDefinition structure (BMP or PNG image)");
             System.out.println("  width         width of a single sprite frame in tile");
@@ -72,8 +72,8 @@ public class SpriteCutProcessor implements Processor
 
         if ((wf < 1) || (hf < 1))
         {
-            System.out.println("Wrong SPRITE_CUT definition");
-            System.out.println("  SPRITE_CUT name \"file\" width height [compression [time [collision [opt_type [opt_level [opt_duplicate [\"sprites_def\"]]]]]]]");
+            System.out.println("Wrong SLICED_SPRITE definition");
+            System.out.println("  SLICED_SPRITE name \"file\" width height [compression [time [collision [opt_type [opt_level [opt_duplicate [\"sprites_def\"]]]]]]]");
             System.out.println("  width and height (size of sprite frame) should be > 0");
 
             return null;
@@ -82,57 +82,71 @@ public class SpriteCutProcessor implements Processor
         // frame size over limit (we need VDP sprite offset to fit into u8 type)
         if ((wf >= 32) || (hf >= 32))
         {
-            System.out.println("Wrong SPRITE_CUT definition");
-            System.out.println("  SPRITE_CUT name \"file\" width height [compression [time [collision [opt_type [opt_level [opt_duplicate [\"sprites_def\"]]]]]]]");
+            System.out.println("Wrong SLICED_SPRITE definition");
+            System.out.println("  SLICED_SPRITE name \"file\" width height [compression [time [collision [opt_type [opt_level [opt_duplicate [\"sprites_def\"]]]]]]]");
             System.out.println("  width and height (size of sprite frame) should be < 32");
 
             return null;
         }
 
+// Search for spritesDefFile (recognized by .txt or .png extension) starting from field 5 onwards
+        String spritesDefFile = null;
+        int spritesDefFileIndex = -1;
+        for (int i = 5; i < fields.length; i++)
+        {
+            String extension = FileUtil.getFileExtension(fields[i], true);
+            if (StringUtil.equals(extension, ".txt") || StringUtil.equals(extension, ".png"))
+            {
+                spritesDefFile = fields[i];
+                spritesDefFileIndex = i;
+                break;
+            }
+        }
+
         // get packed value
         Compression compression = Compression.NONE;
-        if (fields.length >= 6)
+        if (fields.length >= 6 && spritesDefFileIndex != 5)
             compression = Util.getCompression(fields[5]);
         // get frame time
         int[][] time = new int[][] {{ 0 }};
-        if (fields.length >= 7)
+        if (fields.length >= 7 && spritesDefFileIndex != 6)
             time = StringUtil.parseIntArray2D(fields[6], new int[][] {{ 0 }});
         // get collision value
         CollisionType collision = CollisionType.NONE;
-        if (fields.length >= 8)
+        if (fields.length >= 8 && spritesDefFileIndex != 7)
             collision = Util.getCollision(fields[7]);
         // get optimization value
         OptimizationType opt = OptimizationType.BALANCED;
-        if (fields.length >= 9)
+        if (fields.length >= 9 && spritesDefFileIndex != 8)
             opt = Util.getSpriteOptType(fields[8]);
         // get max number of iteration
         OptimizationLevel optLevel = OptimizationLevel.FAST;
         boolean showCut = false;
-        if (fields.length >= 10)
+        if (fields.length >= 10 && spritesDefFileIndex != 9)
         {
             optLevel = Util.getSpriteOptLevel(fields[9]);
             showCut = true;
         }
         boolean optDuplicate = false;
-        if (fields.length >= 11)
+        if (fields.length >= 11 && spritesDefFileIndex != 10)
             optDuplicate = Boolean.parseBoolean(fields[10]);
 
         Compiler.addResourceFile(fileIn);
 
-        if (fields.length >= 12)
+        if (spritesDefFile != null)
         {
-            final String spritesDefFile = FileUtil.adjustPath(Compiler.resDir, fields[11]);
+            final String adjustedSpritesDefFile = FileUtil.adjustPath(Compiler.resDir, spritesDefFile);
             // add resource file (used for deps generation)
-            String extension = FileUtil.getFileExtension(spritesDefFile, true);
-            if (StringUtil.equals(extension,".txt") || StringUtil.equals(extension,".png"))
+            String extension = FileUtil.getFileExtension(adjustedSpritesDefFile, true);
+            if (StringUtil.equals(extension, ".txt") || StringUtil.equals(extension, ".png"))
             {
-                Compiler.addResourceFile(spritesDefFile);
-                return new SpriteCut(id, fileIn, wf, hf, compression, time, collision, opt, optLevel, showCut, optDuplicate, spritesDefFile);
+                Compiler.addResourceFile(adjustedSpritesDefFile);
+                return new SpriteCut(id, fileIn, wf, hf, compression, time, collision, opt, optLevel, showCut, optDuplicate, adjustedSpritesDefFile);
             }
             else
             {
-                System.out.println("Wrong SPRITE_CUT definition");
-                System.out.println("CUTS definition file '"+spritesDefFile+"' must be a text or PNG file! but is of type "+extension);
+                System.out.println("Wrong SLICED_SPRITE definition");
+                System.out.println("CUTS definition file '" + adjustedSpritesDefFile + "' must be a text or PNG file! but is of type " + extension);
                 return null;
             }
         }

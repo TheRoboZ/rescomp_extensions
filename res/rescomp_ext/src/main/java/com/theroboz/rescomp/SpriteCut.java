@@ -46,7 +46,7 @@ public class SpriteCut extends Resource
 
         // frame size over limit (we need VDP sprite offset to fit into u8 type)
         if ((wf >= 32) || (hf >= 32))
-            throw new IllegalArgumentException("SPRITE_CUT '" + id + "' has frame width or frame height >= 32 tiles (not supported)");
+            throw new IllegalArgumentException("SLICED_SPRITE '" + id + "' has frame width or frame height >= 32 tiles (not supported)");
 
         // set frame size
         this.wf = wf;
@@ -64,7 +64,7 @@ public class SpriteCut extends Resource
         final int maxIndex = ArrayMath.max(image, false);
         if (maxIndex >= 64)
             throw new IllegalArgumentException("'" + imgFile
-                    + "' uses color index >= 64, SPRITE_CUT resource requires image with a maximum of 64 colors, use 4bpp indexed colors image instead if you are unsure.");
+                    + "' uses color index >= 64, SLICED_SPRITE resource requires image with a maximum of 64 colors, use 4bpp indexed colors image instead if you are unsure.");
 
         // retrieve basic infos about the image
         final BasicImageInfo imgInfo = ImageUtil.getBasicInfo(imgFile);
@@ -81,7 +81,7 @@ public class SpriteCut extends Resource
         catch (IllegalArgumentException e)
         {
             throw new IllegalArgumentException(
-                    "'" + imgFile + "' SPRITE_CUT resource use more than 1 palette (16 colors), use 4bpp indexed colors image instead if you are unsure.", e);
+                    "'" + imgFile + "' SLICED_SPRITE resource use more than 1 palette (16 colors), use 4bpp indexed colors image instead if you are unsure.", e);
         }
         // get size in tile
         final int wt = w / 8;
