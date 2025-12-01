@@ -9,22 +9,19 @@ import java.util.List;
 
 public final class IndexedOutlineDetector
 {
-
-    //static int transparent;
-
     public static class Rect
     {
         public final int x, y, width, height;
         public final int colorIndex;
 
-        public Rect(int x, int y, int w, int h, int colorIndex)
-        {
-            this.x = x;
-            this.y = y;
-            this.width = snap(w, 8);
-            this.height = snap(h, 8);
-            this.colorIndex = colorIndex;
-        }
+        // public Rect(int x, int y, int w, int h, int colorIndex)
+        // {
+        //     this.x = x;
+        //     this.y = y;
+        //     this.width = snap(w, 8);
+        //     this.height = snap(h, 8);
+        //     this.colorIndex = colorIndex;
+        // }
 
         public Rect(int x, int y, int w, int h)
         {
@@ -49,20 +46,18 @@ public final class IndexedOutlineDetector
         }
     }
 
-
     private static int transIdx;
 
     private static final int MIN_SIZE = 8;
     private static final int MAX_SIZE = 32;
 
     private static BufferedImage img;
-    private static  byte[] pixels;
+    private static byte[] pixels;
     private static int w, h;
     private static int cornerColor;
 
     private static boolean isSolid(int x, int y) {
-        if (x < 0 || y < 0 || x >= w || y >= h) return false;
-        return (pixels[y * w + x] & 0xFF) != transIdx;
+        return x >= 0 && y >= 0 && x < w && y < h && (pixels[y * w + x] & 0xFF) != transIdx;
     }
 
     private static int getColor(int x, int y) {
@@ -71,7 +66,7 @@ public final class IndexedOutlineDetector
     }
 
     // Checkerboard: valid if current or next pixel is solid
-    private static boolean hasColumnPixel(int x, int y) {
+    private static boolean hasLeftBorderPixel(int x, int y) {
         return (getColor(x, y) == cornerColor || getColor(x, y+1) == cornerColor);
     }
 
@@ -85,36 +80,26 @@ public final class IndexedOutlineDetector
         int rx = sx+1;
         while (rx < w && hasTopborderPixel(rx, sy)) rx++;
         if (!isSolid(rx, sy) || (getColor(rx,sy+1)!=cornerColor && getColor(rx, sy+2)!=cornerColor)) rx--;
-        if (rx>sx)
-        {
-            if (rx - sx + 1 < MIN_SIZE) rx = sx + MIN_SIZE-1;
-            //System.out.println("found top horizontal span from "+sx+", "+sy+" to " + rx + ", "+sy);
-        }
-        else return null;
+        if (rx <= sx) return null;
+        if (rx - sx + 1 < MIN_SIZE) rx = sx + MIN_SIZE-1;
 
         int ry = sy + 1;
-        while (ry < h && hasColumnPixel(sx, ry)) ry++;
+        while (ry < h && hasLeftBorderPixel(sx, ry)) ry++;
         if (!isSolid(sx, ry) || (getColor(sx+1,ry)!=cornerColor && getColor(sx, ry+2)!=cornerColor)) ry--;
-        if (ry>sy)
-        {
-            if (ry - sy + 1 < MIN_SIZE) ry = sy + MIN_SIZE-1;
-            //System.out.println("found left vertical span from "+sx+", "+sy+" to  " + sx + ", "+ry);
-        }
-        else return null;
+        if (ry <= sy) return null;
+        if (ry - sy + 1 < MIN_SIZE) ry = sy + MIN_SIZE-1;
+        //System.out.println("found left vertical span from "+sx+", "+sy+" to  " + sx + ", "+ry);
 
-        int dy = sy + 1;
-          while (dy < ry) {
-          if (!isSolid(rx, dy)) return null;
-          dy++;
+        // Verify right edge
+        for (int dy = sy + 1; dy < ry; dy++) {
+            if (!isSolid(rx, dy)) return null;
         }
 
         //System.out.println("found right vertical span from "+rx+", "+sy+" to " + dy );
 
         // Verify bottom edge
-        int dx = sx+1;
-        while (dx < rx) {
+        for (int dx = sx + 1; dx < rx; dx++) {
             if (!isSolid(dx, ry)) return null;
-            dx++;
         }
 
         //System.out.println("found bottom horizontal span from "+sx+", "+by+" to " + bx );
@@ -127,19 +112,22 @@ public final class IndexedOutlineDetector
     {
         img = ImageIO.read(file);
         if (!(img.getColorModel() instanceof IndexColorModel)) throw new IllegalArgumentException("Must be indexed-color PNG");
+
         IndexColorModel cm = (IndexColorModel) img.getColorModel();
         transIdx = cm.getTransparentPixel();
         if (transIdx == -1) throw new RuntimeException("No transparent color found");
 
         pixels = ((DataBufferByte) img.getRaster().getDataBuffer()).getData();
-
         w = img.getWidth();
         h = img.getHeight();
 
         List<Rect> result = new ArrayList<>();
+        int maxY = h - MIN_SIZE;
+        int maxX = w - MIN_SIZE;
 
-        for (int y = 0; y < h - MIN_SIZE; y++) {
-            for (int x = 0; x < w - MIN_SIZE; x++) {
+
+        for (int y = 0; y < maxY; y++) {
+            for (int x = 0; x <maxX; x++) {
 
                 cornerColor = getColor(x,y);
 
@@ -159,9 +147,7 @@ public final class IndexedOutlineDetector
                 int clampedW = Math.max(MIN_SIZE, Math.min(MAX_SIZE, raw.width));
                 int clampedH = Math.max(MIN_SIZE, Math.min(MAX_SIZE, raw.height));
 
-                Rect clamped = new Rect(raw.x, raw.y, clampedW, clampedH);
-
-                result.add(clamped);
+                result.add(new Rect(raw.x, raw.y, clampedW, clampedH));
                 x += 1;
             }
         }
