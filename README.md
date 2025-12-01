@@ -4,11 +4,11 @@ A processor that reads .png sprite sheets and a complementary "sprites slices de
 
 ## Features
 - Read textual sprite definitions (.txt) or detect outlined regions in indexed, transparent PNGs (.png).
-- Text file can be exported from Aseprite using the script sgdk_slices.lua in root, jsut use slices to define the rectangles and provide the frame width and height when the script requests it
+- Text file can be exported from Aseprite using the script sgdk_slices.lua in root, just use slices to define the rectangles and provide the frame width and height when the script requests it
 - Map detected rectangles into animations and frames using the sheet grid (W x H).
 - Produce the same frame/animation output using both definitions type.
-- Drop-in replacement for SGDK's SPRRITE resource with added cutting and optimization. No need to modify your .c code, just change the resource definition
-- Flexible sprites_def parameter: recognized by extension (.txt or .png) anywhere after the required height parameter — no need to place it strictly last or to declare the full optional paramters list.
+- Drop-in replacement for SGDK's SPRITE resource with added cutting and optimization. No need to modify your .c code, just change the resource definition
+- Flexible sprites_def parameter: recognized by extension (.txt or .png) anywhere after the required height parameter — no need to place it strictly last or to declare the full optional parameters list.
 
 ## sprites_def formats
 ### Text (.txt)

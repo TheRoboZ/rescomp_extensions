@@ -1,0 +1,10 @@
+com\theroboz\sliced_sprite\VDPSpriteCut.class
+com\theroboz\sliced_sprite\IndexedOutlineDetector.class
+com\theroboz\sliced_sprite\SpriteCut.class
+com\theroboz\sliced_sprite\SpriteCutAnimation.class
+com\theroboz\sliced_sprite\SpriteCutFrame.class
+com\theroboz\sliced_sprite\SpriteFrameDefinition.class
+com\theroboz\sliced_sprite\SpriteCutProcessor.class
+com\theroboz\sliced_sprite\SpriteCutReader.class
+com\theroboz\sliced_sprite\IndexedOutlineDetector$Rect.class
+com\theroboz\sliced_sprite\SpriteCutFrame$1.class

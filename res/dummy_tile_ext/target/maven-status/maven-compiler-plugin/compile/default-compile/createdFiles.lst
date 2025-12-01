@@ -1,0 +1,6 @@
+com\theroboz\dummy_tile\DummyMapProcessor.class
+com\theroboz\dummy_tile\DummyTileset.class
+com\theroboz\dummy_tile\IndexedOutlineDetector.class
+com\theroboz\dummy_tile\DummyTilesetProcessor.class
+com\theroboz\dummy_tile\DummyMap.class
+com\theroboz\dummy_tile\IndexedOutlineDetector$Rect.class
