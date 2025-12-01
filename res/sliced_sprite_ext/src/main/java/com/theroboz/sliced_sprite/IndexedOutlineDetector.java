@@ -9,6 +9,8 @@ import java.util.List;
 
 public final class IndexedOutlineDetector
 {
+    static int transparent;
+
     public static class Rect
     {
         public final int x, y, width, height;
@@ -42,12 +44,12 @@ public final class IndexedOutlineDetector
         BufferedImage img = ImageIO.read(file);
         if (!(img.getColorModel() instanceof IndexColorModel)) throw new IllegalArgumentException("Must be indexed-color PNG");
         IndexColorModel cm = (IndexColorModel) img.getColorModel();
-        int transparent = cm.getTransparentPixel(); // usually -1
+        transparent = cm.getTransparentPixel(); // usually -1
 
         byte[] pixels = ((DataBufferByte) img.getRaster().getDataBuffer()).getData();
         int w = img.getWidth();
         int h = img.getHeight();
-        boolean[][] visited = new boolean[h][w];
+        //boolean[][] visited = new boolean[h][w];
 
         // Only marks border pixels as visited
         List<Rect> result = new ArrayList<>();
@@ -55,10 +57,10 @@ public final class IndexedOutlineDetector
         {
             for (int x = 0; x < w-8; x++)
             {
-                if (visited[y][x])
-                {
-                    continue;
-                }
+                // if (visited[y][x])
+                // {
+                //     continue;
+                // }
 
                 int idx = pixels[y * w + x] & 0xFF;
                 if (idx == transparent || idx == 0)
@@ -69,7 +71,7 @@ public final class IndexedOutlineDetector
                 //System.out.println("Testing rectangle " + x +" "+ y);
 
                 // Try to detect rectangle with top border starting at (x,y)
-                Rect r = tryFindRectangle(pixels, w, h, x, y, (byte)idx, visited);
+                Rect r = tryFindRectangle(pixels, w, h, x, y, (byte)idx);//, visited);
                 if (r != null)
                 {
                     result.add(r);
@@ -82,13 +84,15 @@ public final class IndexedOutlineDetector
         return result.toArray(new Rect[0]);
     }
 
-    private static Rect tryFindRectangle(byte[] pixels, int imgW, int imgH, int startX, int startY, byte color, boolean[][] visited)
+    private static Rect tryFindRectangle(byte[] pixels, int imgW, int imgH, int startX, int startY, byte color)//, boolean[][] visited)
     {
         // 1. Find right end of top horizontal border
         int rightX = startX;
 
         while (rightX < imgW - 1 &&
-            ((pixels[startY * imgW + rightX + 1] == color) || (visited[startY][rightX+1]))) rightX++;
+            ((pixels[startY * imgW + rightX + 1] == color) //|| (visited[startY][rightX+1]))
+            || (pixels[startY * imgW + rightX + 2] == color))
+        ) rightX++;
 
         int minSize = 7;
         if (rightX - startX < minSize)
@@ -96,6 +100,7 @@ public final class IndexedOutlineDetector
             //System.out.println("Rejected small rectangle from " + startX +" "+ startY +" to "+ rightX + " "+ startY +" w " + (rightX - startX + 1));
             return null;
         }
+        else  System.out.println("found horizontal span at " + startX + " " + startY + " color " + color + "w "+ (rightX - startX));
 
         // 2. Find matching bottom border (same length, same color)
         int bottomY = -1;
@@ -124,7 +129,7 @@ public final class IndexedOutlineDetector
         }
 
         // Success! Mark all border pixels as visited
-        markBorder(visited, startX, startY, rightX, bottomY);
+        //markBorder(visited, startX, startY, rightX, bottomY);
         int width = rightX - startX + 1;
         int height = bottomY - startY + 1;
         return new Rect(startX, startY, width, height, color & 0xFF);
@@ -135,11 +140,22 @@ public final class IndexedOutlineDetector
         for (int x = x1; x <= x2; x++)
         {
             byte pixel = p[y * w + x];
-            byte next = x<x2 ? p[y * w + x+1] : -1;
-            if ((pixel != c) && (next!= c))
+
+            if (pixel != c)
             {
-                if (pixel > 0)
+                if (pixel != transparent)
+                {
+                    //get next 2 pixels
+                    byte next  = x<x2 ? p[y * w + x+1] : -1;
+                    byte next2 = x<x2 ? p[y * w + x+2] : -1;
+
+                    if ((next==pixel) || (next2 == pixel) || (next == transparent)) //can be another rect
+                    {
+                        return true;
+                    }
+
                     System.out.println("Incomplete horizontal border at " + x + " " + y + " color " + pixel + " lookign for " + c);
+                }
                 return false;
             }
         }
@@ -151,32 +167,42 @@ public final class IndexedOutlineDetector
         for (int y = y1; y <= y2; y++)
         {
             byte pixel = p[y * w + x];
-             byte next = y<y2 ? p[(y+1) * w + x] : -1;
-            if ((pixel != c) && (next!= c))
+            if ((pixel != c))
             {
-                if (pixel > 0)
+                if (pixel != transparent)
+                {
+                    //get next 2 pixels
+                    byte next = y<y2 ? p[(y+1) * w + x] : -1;
+                    byte next2 = y<y2 ? p[(y+2) * w + x] : -1;
+
+                    if ((next==pixel) || (next2 == pixel) || (next == transparent)) //can be another rect
+                    {
+                        return true;
+                    }
+
                     System.out.println("Incomplete vertical border at " + x + " " + y+ " color " + pixel + " lookign for " + c);
+                }
                 return false;
             }
         }
         return true;
     }
 
-    private static void markBorder(boolean[][] v, int x1, int y1, int x2, int y2)
-    {
-        // top + bottom
-        for (int x = x1; x <= x2; x++)
-        {
-            v[y1][x] = true;
-            v[y2][x] = true;
-        }
+    // private static void markBorder(boolean[][] v, int x1, int y1, int x2, int y2)
+    // {
+    //     // top + bottom
+    //     for (int x = x1; x <= x2; x++)
+    //     {
+    //         v[y1][x] = true;
+    //         v[y2][x] = true;
+    //     }
 
-        // left + right (skip corners already marked)
-        for (int y = y1 + 1; y < y2; y++)
-        {
-            v[y][x1] = true;
-            v[y][x2] = true;
-        }
-    }
+    //     // left + right (skip corners already marked)
+    //     for (int y = y1 + 1; y < y2; y++)
+    //     {
+    //         v[y][x1] = true;
+    //         v[y][x2] = true;
+    //     }
+    // }
 
 }
