@@ -9,7 +9,8 @@ import java.util.List;
 
 public final class IndexedOutlineDetector
 {
-    static int transparent;
+
+    //static int transparent;
 
     public static class Rect
     {
@@ -23,6 +24,15 @@ public final class IndexedOutlineDetector
             this.width = snap(w, 8);
             this.height = snap(h, 8);
             this.colorIndex = colorIndex;
+        }
+
+        public Rect(int x, int y, int w, int h)
+        {
+            this.x = x;
+            this.y = y;
+            this.width = snap(w, 8);
+            this.height = snap(h, 8);
+            this.colorIndex = 0;
         }
 
         private int snap(int v, int g)
@@ -39,170 +49,123 @@ public final class IndexedOutlineDetector
         }
     }
 
+
+    private static int transIdx;
+
+    private static final int MIN_SIZE = 8;
+    private static final int MAX_SIZE = 32;
+
+    private static BufferedImage img;
+    private static  byte[] pixels;
+    private static int w, h;
+    private static int cornerColor;
+
+    private static boolean isSolid(int x, int y) {
+        if (x < 0 || y < 0 || x >= w || y >= h) return false;
+        return (pixels[y * w + x] & 0xFF) != transIdx;
+    }
+
+    private static int getColor(int x, int y) {
+        if (x < 0 || y < 0 || x >= w || y >= h) return transIdx;
+        return (pixels[y * w + x] & 0xFF);
+    }
+
+    // Checkerboard: valid if current or next pixel is solid
+    private static boolean hasColumnPixel(int x, int y) {
+        return (getColor(x, y) == cornerColor || getColor(x, y+1) == cornerColor);
+    }
+
+    // Checkerboard: valid if current or next pixel is solid
+    private static boolean hasTopborderPixel(int x, int y) {
+        return (getColor(x, y) == cornerColor) || (getColor(x + 1, y) == cornerColor);
+    }
+
+    private static Rect tryExtend(int sx, int sy) {
+
+        int rx = sx+1;
+        while (rx < w && hasTopborderPixel(rx, sy)) rx++;
+        if (!isSolid(rx, sy) || (getColor(rx,sy+1)!=cornerColor && getColor(rx, sy+2)!=cornerColor)) rx--;
+        if (rx>sx)
+        {
+            if (rx - sx + 1 < MIN_SIZE) rx = sx + MIN_SIZE-1;
+            //System.out.println("found top horizontal span from "+sx+", "+sy+" to " + rx + ", "+sy);
+        }
+        else return null;
+
+        int ry = sy + 1;
+        while (ry < h && hasColumnPixel(sx, ry)) ry++;
+        if (!isSolid(sx, ry) || (getColor(sx+1,ry)!=cornerColor && getColor(sx, ry+2)!=cornerColor)) ry--;
+        if (ry>sy)
+        {
+            if (ry - sy + 1 < MIN_SIZE) ry = sy + MIN_SIZE-1;
+            //System.out.println("found left vertical span from "+sx+", "+sy+" to  " + sx + ", "+ry);
+        }
+        else return null;
+
+        int dy = sy + 1;
+          while (dy < ry) {
+          if (!isSolid(rx, dy)) return null;
+          dy++;
+        }
+
+        //System.out.println("found right vertical span from "+rx+", "+sy+" to " + dy );
+
+        // Verify bottom edge
+        int dx = sx+1;
+        while (dx < rx) {
+            if (!isSolid(dx, ry)) return null;
+            dx++;
+        }
+
+        //System.out.println("found bottom horizontal span from "+sx+", "+by+" to " + bx );
+        //System.out.println("found RECT "+sx+", "+sy+", " + (rx - sx + 1) +", "+ (ry - sy + 1));
+
+        return new Rect(sx, sy, rx - sx + 1, ry - sy + 1);
+    }
+
     public static Rect[] detect(File file) throws IOException
     {
-        BufferedImage img = ImageIO.read(file);
+        img = ImageIO.read(file);
         if (!(img.getColorModel() instanceof IndexColorModel)) throw new IllegalArgumentException("Must be indexed-color PNG");
         IndexColorModel cm = (IndexColorModel) img.getColorModel();
-        transparent = cm.getTransparentPixel(); // usually -1
+        transIdx = cm.getTransparentPixel();
+        if (transIdx == -1) throw new RuntimeException("No transparent color found");
 
-        byte[] pixels = ((DataBufferByte) img.getRaster().getDataBuffer()).getData();
-        int w = img.getWidth();
-        int h = img.getHeight();
-        //boolean[][] visited = new boolean[h][w];
+        pixels = ((DataBufferByte) img.getRaster().getDataBuffer()).getData();
 
-        // Only marks border pixels as visited
+        w = img.getWidth();
+        h = img.getHeight();
+
         List<Rect> result = new ArrayList<>();
-        for (int y = 0; y < h-8; y++)
-        {
-            for (int x = 0; x < w-8; x++)
-            {
-                // if (visited[y][x])
-                // {
-                //     continue;
-                // }
 
-                int idx = pixels[y * w + x] & 0xFF;
-                if (idx == transparent || idx == 0)
-                {
-                    continue;
-                }
+        for (int y = 0; y < h - MIN_SIZE; y++) {
+            for (int x = 0; x < w - MIN_SIZE; x++) {
 
-                //System.out.println("Testing rectangle " + x +" "+ y);
+                cornerColor = getColor(x,y);
 
-                // Try to detect rectangle with top border starting at (x,y)
-                Rect r = tryFindRectangle(pixels, w, h, x, y, (byte)idx);//, visited);
-                if (r != null)
-                {
-                    result.add(r);
-                    System.out.println("Found rectangle " + r.x +" "+ r.y +" " + r.width +" " + r.height);
-                    x+=r.width;
-                }
+                // Geometric top-left corner
+                if (cornerColor == transIdx) continue;
+                if (getColor(x - 1, y) == cornerColor) continue;
+                if (getColor(x - 2, y) == cornerColor) continue;
+                if (getColor(x, y - 1) == cornerColor) continue;
+                if (getColor(x, y - 2) == cornerColor) continue;
+
+                //System.out.println("Possible TOP CORNER at "+x+", "+y);
+
+                Rect raw = tryExtend(x, y);
+                if (raw == null) continue;
+
+                // Clamp to 8–32 range
+                int clampedW = Math.max(MIN_SIZE, Math.min(MAX_SIZE, raw.width));
+                int clampedH = Math.max(MIN_SIZE, Math.min(MAX_SIZE, raw.height));
+
+                Rect clamped = new Rect(raw.x, raw.y, clampedW, clampedH);
+
+                result.add(clamped);
+                x += 1;
             }
         }
-
         return result.toArray(new Rect[0]);
     }
-
-    private static Rect tryFindRectangle(byte[] pixels, int imgW, int imgH, int startX, int startY, byte color)//, boolean[][] visited)
-    {
-        // 1. Find right end of top horizontal border
-        int rightX = startX;
-
-        while (rightX < imgW - 1 &&
-            ((pixels[startY * imgW + rightX + 1] == color) //|| (visited[startY][rightX+1]))
-            || (pixels[startY * imgW + rightX + 2] == color))
-        ) rightX++;
-
-        int minSize = 7;
-        if (rightX - startX < minSize)
-        {
-            //System.out.println("Rejected small rectangle from " + startX +" "+ startY +" to "+ rightX + " "+ startY +" w " + (rightX - startX + 1));
-            return null;
-        }
-        else  System.out.println("found horizontal span at " + startX + " " + startY + " color " + color + "w "+ (rightX - startX));
-
-        // 2. Find matching bottom border (same length, same color)
-        int bottomY = -1;
-        for (int y = startY + minSize; y < imgH; y++)
-        {
-            if (isFullHorizontal(pixels, imgW, startX, rightX, y, color))
-            {
-                bottomY = y;
-                break;
-            }
-        }
-
-        if (bottomY == -1) {
-            return null;
-        }
-
-        // 3. Verify left and right vertical borders are complete
-        if (!isFullVertical(pixels, imgW, startX, startY, bottomY, color))
-        {
-            return null;
-        }
-
-        if (!isFullVertical(pixels, imgW, rightX, startY, bottomY, color))
-        {
-            return null;
-        }
-
-        // Success! Mark all border pixels as visited
-        //markBorder(visited, startX, startY, rightX, bottomY);
-        int width = rightX - startX + 1;
-        int height = bottomY - startY + 1;
-        return new Rect(startX, startY, width, height, color & 0xFF);
-    }
-
-    private static boolean isFullHorizontal(byte[] p, int w, int x1, int x2, int y, byte c)
-    {
-        for (int x = x1; x <= x2; x++)
-        {
-            byte pixel = p[y * w + x];
-
-            if (pixel != c)
-            {
-                if (pixel != transparent)
-                {
-                    //get next 2 pixels
-                    byte next  = x<x2 ? p[y * w + x+1] : -1;
-                    byte next2 = x<x2 ? p[y * w + x+2] : -1;
-
-                    if ((next==pixel) || (next2 == pixel) || (next == transparent)) //can be another rect
-                    {
-                        return true;
-                    }
-
-                    System.out.println("Incomplete horizontal border at " + x + " " + y + " color " + pixel + " lookign for " + c);
-                }
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static boolean isFullVertical(byte[] p, int w, int x, int y1, int y2, byte c)
-    {
-        for (int y = y1; y <= y2; y++)
-        {
-            byte pixel = p[y * w + x];
-            if ((pixel != c))
-            {
-                if (pixel != transparent)
-                {
-                    //get next 2 pixels
-                    byte next = y<y2 ? p[(y+1) * w + x] : -1;
-                    byte next2 = y<y2 ? p[(y+2) * w + x] : -1;
-
-                    if ((next==pixel) || (next2 == pixel) || (next == transparent)) //can be another rect
-                    {
-                        return true;
-                    }
-
-                    System.out.println("Incomplete vertical border at " + x + " " + y+ " color " + pixel + " lookign for " + c);
-                }
-                return false;
-            }
-        }
-        return true;
-    }
-
-    // private static void markBorder(boolean[][] v, int x1, int y1, int x2, int y2)
-    // {
-    //     // top + bottom
-    //     for (int x = x1; x <= x2; x++)
-    //     {
-    //         v[y1][x] = true;
-    //         v[y2][x] = true;
-    //     }
-
-    //     // left + right (skip corners already marked)
-    //     for (int y = y1 + 1; y < y2; y++)
-    //     {
-    //         v[y][x1] = true;
-    //         v[y][x2] = true;
-    //     }
-    // }
 
 }

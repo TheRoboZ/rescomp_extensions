@@ -147,6 +147,7 @@ public class SpriteCutReader
             grouped.computeIfAbsent(animIndex, k -> new HashMap<>())
                    .computeIfAbsent(frameIndex, k -> new ArrayList<>())
                    .add(new SpriteCell(r.x - frameIndex*regionH, r.y - animIndex*regionH, r.width, r.height, OptimizationType.BALANCED));
+                   System.out.println("Rectangle " + (r.x) +" "+  (r.y) +" " + r.width +" " + r.height);
                    System.out.println("Saved anim "+animIndex+" frame "+frameIndex+" rectangle " + (r.x - frameIndex*regionH) +" "+  (r.y - animIndex*regionH) +" " + r.width +" " + r.height);
 
         }
